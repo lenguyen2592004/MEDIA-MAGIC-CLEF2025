@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-import ruamel_yaml as yaml
+from ruamel.yaml import YAML
 import time
 import datetime
 import json
@@ -136,7 +136,11 @@ if __name__ == '__main__':
     parser.add_argument('--distributed', default=False, type=bool)
     args = parser.parse_args()
 
-    config = yaml.safe_load(open(args.config, 'r'))
+    # config = yaml.safe_load(open(args.config, 'r'))
+    yaml = YAML(typ='safe', pure=True)
+
+    with open(args.config, 'r') as f:
+        config = yaml.load(f)
 
     args.output_dir = os.path.join(args.output_dir, datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M'))
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
