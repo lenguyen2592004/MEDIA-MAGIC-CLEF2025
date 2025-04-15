@@ -21,7 +21,12 @@ med2019:
   test_file: [ '/mnt/sda/lpf/data/vqa/vqa_med/2019/vqa_med_2019_test.json' ]
   answer_list: '/mnt/sda/lpf/data/vqa/vqa_med/2019/answer_trainval_list.json'
   vqa_root: '/mnt/sda/lpf/data/vqa/vqa_med/2019/images/'
-
+clef2025:
+  train_file: [ '/kaggle/input/dataset-vqa/train.json',
+                '/kaggle/input/dataset-vqa/val.json' ]
+  test_file: [ '/kaggle/input/dataset-vqa/test.json' ]
+  answer_list: '/kaggle/input/dataset-vqa/answer_trainval_list.json'
+  vqa_root: '/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final'
 image_res: 384      # 480  384  256
 batch_size_train: 8
 batch_size_test: 4

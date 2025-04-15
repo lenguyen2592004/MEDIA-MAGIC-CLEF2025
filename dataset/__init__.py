@@ -63,6 +63,11 @@ def create_dataset(dataset, config):
         test_dataset = vqa_dataset(config['med2019']['test_file'], test_transform, config['med2019']['vqa_root'], split='test',
                                    answer_list=config['med2019']['answer_list'])
         return train_dataset, test_dataset
+    elif dataset == 'clef2025':
+        train_dataset = vqa_dataset(config['clef2025']['train_file'], train_transform, config['clef2025']['vqa_root'], split='train')
+        test_dataset = vqa_dataset(config['clef2025']['test_file'], test_transform, config['clef2025']['vqa_root'], split='test',
+                                   answer_list=config['clef2025']['answer_list'])
+        return train_dataset, test_dataset
 
 
 def vqa_collate_fn(batch):
