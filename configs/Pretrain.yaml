@@ -13,8 +13,8 @@ text_config: 'bert-base-uncased'
 bert_config: 'configs/config_bert.json'
 
 
-vision_deit_path: '/mnt/sda/lpf/weights/pre_training/vision_pth/deit_base_patch16_224.pth'
-vit_mae_pretrain_path: '/mnt/sda/lpf/weights/pre_training/vision_pth/mae_pretrain_vit_base.pth'
+vision_deit_path: '/kaggle/input/vision-deit-vit-mae-pretrain/pretrained_models/deit_base_patch16_224.pth'
+vit_mae_pretrain_path: '/kaggle/input/vision-deit-vit-mae-pretrain/pretrained_models/mae_pretrain_vit_base.pth'
 
 image_res: 256
 vision_width: 768
