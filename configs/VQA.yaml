@@ -23,7 +23,7 @@ med2019:
   vqa_root: '/mnt/sda/lpf/data/vqa/vqa_med/2019/images/'
 clef2025:
   train_file: [ '/kaggle/input/dataset-vqa/train.json']
-  test_file: [ '/kaggle/input/dataset-vqa/test.json' ]
+  test_file: [ '/kaggle/input/dataset-vqa/val.json' ]
   answer_list: '/kaggle/input/dataset-vqa/answer_trainval_list.json'
   vqa_root: '/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final'
 image_res: 384      # 480  384  256
@@ -43,4 +43,4 @@ init_lr: 2e-5
 weight_decay: 0.05
 #min_lr: 0
 min_lr: 1e-8
-max_epoch: 40
+max_epoch: 30

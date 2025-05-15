@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-import ruamel_yaml as yaml
+from ruamel.yaml import YAML
 import time
 import datetime
 import json
@@ -11,7 +11,8 @@ import torch.distributed as dist
 
 from models.model_vqa import MUMC_VQA
 from models.vision.vit import interpolate_pos_embed
-from models.tokenization_bert import BertTokenizer
+# from models.tokenization_bert import BertTokenizer
+from transformers import BertTokenizer
 import utils
 from dataset.utils import save_result
 from dataset import create_dataset, create_sampler, create_loader, vqa_collate_fn
@@ -68,7 +69,12 @@ def evaluation(model, data_loader, device, config):
         topk_ids, topk_probs = model(image, question, answer_list, train=False, k=config['k_test'])
 
         for ques_id, topk_id, topk_prob in zip(question_id, topk_ids, topk_probs):
-            ques_id = int(ques_id.item())
+            # ques_id = int(ques_id.item())
+            if isinstance(ques_id, torch.Tensor):  
+                ques_id = str(ques_id.item())  
+            else:  
+                ques_id = str(ques_id)
+
             _, pred = topk_prob.max(dim=0)
             result.append({"qid": ques_id, "answer": data_loader.dataset.answer_list[topk_id[pred]]})
     return result
@@ -105,30 +111,39 @@ def main(args, config):
     #### Creating Model ####
     print("Creating model")
     model = MUMC_VQA(config=config, text_encoder=args.text_encoder, text_decoder=args.text_decoder, tokenizer=tokenizer)
-    model = model.to(device)
+    model = model.to_empty(device=device)
     # print(model)
     optimizer = torch.optim.AdamW(params=model.parameters(), lr=config['init_lr'], weight_decay=config['weight_decay'])
 
+    start_epoch = 0
+    
     if args.checkpoint:
         checkpoint = torch.load(args.checkpoint, map_location='cpu')
-        state_dict = checkpoint['model']
-        # state_dict = checkpoint
-
-        # reshape positional embedding to accomodate for image resolution change
-        pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder.pos_embed'], model.visual_encoder)
-        state_dict['visual_encoder.pos_embed'] = pos_embed_reshaped
-
-        if not args.evaluate:
+    
+        if 'model' in checkpoint:  # => checkpoint là từ fine-tune
+            print("Resuming from fine-tuned checkpoint...")
+            msg = model.load_state_dict(checkpoint['model'], strict=False)
+            print(msg)
+            if 'optimizer' in checkpoint:
+                optimizer.load_state_dict(checkpoint['optimizer'])
+            if 'epoch' in checkpoint:
+                start_epoch = checkpoint['epoch'] + 1  # tiếp tục từ epoch tiếp theo
+        else:  # => checkpoint là pretrain => cần transform weights
+            print("Loading pre-trained checkpoint (transforming keys)...")
+            state_dict = checkpoint
+            # reshape positional embedding
+            pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder.pos_embed'], model.visual_encoder)
+            state_dict['visual_encoder.pos_embed'] = pos_embed_reshaped
+    
             if config['distill']:
                 m_pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder_m.pos_embed'],
                                                              model.visual_encoder_m)
                 state_dict['visual_encoder_m.pos_embed'] = m_pos_embed_reshaped
-
+    
             for key in list(state_dict.keys()):
                 if 'bert' in key:
                     encoder_key = key.replace('bert.', '')
                     state_dict[encoder_key] = state_dict[key]
-                    # intialize text decoder as multimodal encoder (last 6 layers of model.text_encoder)
                 if 'text_encoder' in key:
                     if 'layer' in key:
                         encoder_keys = key.split('.')
@@ -144,22 +159,21 @@ def main(args, config):
                         encoder_key = key
                     decoder_key = encoder_key.replace('text_encoder', 'text_decoder')
                     state_dict[decoder_key] = state_dict[key]
-
                     del state_dict[key]
-
-        msg = model.load_state_dict(state_dict, strict=False)
-        print('load checkpoint from %s' % args.checkpoint)
-        print(msg)
+    
+            msg = model.load_state_dict(state_dict, strict=False)
+            print('Loaded pre-trained checkpoint and transformed weights')
+            print(msg)
 
     model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    start_epoch = 0
     print("\nStart training\n")
     start_time = time.time()
 
+    best_loss = float('inf')
     for epoch in range(start_epoch, config['max_epoch']):
         if not args.evaluate:
             if args.distributed:
@@ -167,7 +181,7 @@ def main(args, config):
 
             cosine_lr_schedule(optimizer, epoch, config['max_epoch'], config['init_lr'], config['min_lr'])
 
-            train(model, train_loader, optimizer, epoch, device, config)
+            train_stats  = train(model, train_loader, optimizer, epoch, device, config)
 
         if args.evaluate:
             break
@@ -176,13 +190,20 @@ def main(args, config):
 
             save_obj = {
                 'model': model_without_ddp.state_dict(),
-                # 'optimizer': optimizer.state_dict(),
-                # 'config': config,
-                # 'epoch': epoch,
+                'optimizer': optimizer.state_dict(),
+                'config': config,
+                'epoch': epoch,
             }
             prefix = args.checkpoint.split('/')[-1].split('.')[0]
-            if args.is_save_path and epoch > 20:
-                torch.save(save_obj, os.path.join(args.output_dir, '%s_rad_%02d.pth' % (prefix, epoch)))
+            
+            # You can store the best model by tracking loss here
+            current_loss = float(train_stats['loss'])
+            if current_loss < best_loss:
+                best_loss = current_loss
+                torch.save(save_obj, os.path.join(args.output_dir, 'best_model.pth'))
+            
+            # Always save the latest model
+            torch.save(save_obj, os.path.join(args.output_dir, 'latest_model.pth'))
             vqa_result = evaluation(model, test_loader, device, config)
             json.dump(vqa_result, open(os.path.join(args.result_dir, '%s_vqa_result_%s.json' % (prefix, epoch)), 'w'))
 
@@ -202,7 +223,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_use', default='rad', help='choose medical vqa dataset(rad, pathvqa, slake)')
     parser.add_argument('--is_save_path', default=False)
-    parser.add_argument('--checkpoint', default='/mnt/sda/lpf/weights/output/V2/pretrain/std/med_pretrain_29.pth')
+    parser.add_argument('--checkpoint', default='/kaggle/input/pre-training-mvqa-50-epoch/pretrain/2025-04-14_12-46/best_model.pth')
     parser.add_argument('--output_suffix', default='', help='output suffix, eg. ../rad_29_1')
     parser.add_argument('--output_dir', default='', help='the final output path, need not to assign')
     parser.add_argument('--evaluate', action='store_true')
@@ -218,7 +239,10 @@ if __name__ == '__main__':
 
     args.output_dir = '/kaggle/working/output/' + args.dataset_use + args.output_suffix
 
-    config = yaml.load(open('./configs/VQA.yaml', 'r'), Loader=yaml.Loader)
+    # config = yaml.load(open('./configs/VQA.yaml', 'r'), Loader=yaml.Loader)
+    yaml = YAML(typ='safe')  # hoặc typ='rt' nếu bạn cần preserve formatting
+    with open('./configs/VQA.yaml', 'r') as f:
+        config = yaml.load(f)
 
     args.result_dir = os.path.join(args.output_dir, 'result')
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
