@@ -1,15 +1,15 @@
 # each train_file (json) contains a python list where each item is {'image': img_path, 'caption': text or list_of_text }
 train_file: [
-    '/kaggle/input/pretrain-data/pretrain_data.json'
+    'pretrain-data/pretrain_data.json'
 ]
-image_root: '/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final/images_train'
+image_root: 'imageclefmed-mediqa-magic-2025/images_final/images_final/images_train'
 
 text_config: 'bert-base-uncased'
 bert_config: 'configs/config_bert.json'
 
 
-vision_deit_path: '/kaggle/input/vision-deit-vit-mae-pretrain/pretrained_models/deit_base_patch16_224.pth'
-vit_mae_pretrain_path: '/kaggle/input/vision-deit-vit-mae-pretrain/pretrained_models/mae_pretrain_vit_base.pth'
+vision_deit_path: 'vision-deit-vit-mae-pretrain/pretrained_models/deit_base_patch16_224.pth'
+vit_mae_pretrain_path: 'vision-deit-vit-mae-pretrain/pretrained_models/mae_pretrain_vit_base.pth'
 
 image_res: 256
 vision_width: 768
