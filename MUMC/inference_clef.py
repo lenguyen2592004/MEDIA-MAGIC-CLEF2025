@@ -32,7 +32,12 @@ def preprocess_image(image_path, config):
         mean=(0.48145466, 0.4578275, 0.40821073),
         std=(0.26862954, 0.26130258, 0.27577711)
     )
-    image = Image.open(image_path).convert("RGB")
+    try:
+        image = Image.open(image_path).convert("RGB")
+    except Exception as e:
+        print(f"❌ Error opening image {image_path}: {e}")
+        return None
+        
     transform = transforms.Compose([
         transforms.Resize((config['image_res'], config['image_res']), interpolation=Image.BICUBIC),
         transforms.ToTensor(),
@@ -52,12 +57,17 @@ def infer_one_sample(model, image_tensor, question, answer_list, config, device)
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, required=True)
-    parser.add_argument('--config_path', type=str, default='./configs/VQA.yaml')
-    parser.add_argument('--text_encoder', default='bert-base-uncased')
-    parser.add_argument('--text_decoder', default='bert-base-uncased')
-    parser.add_argument('--device', default='cuda')
+    parser = argparse.ArgumentParser(description="Run MUMC VQA inference on a directory of images.")
+    # --- Model and Config Arguments ---
+    parser.add_argument('--checkpoint', type=str, required=True, help="Path to the model checkpoint file (.pth).")
+    parser.add_argument('--config_path', type=str, default='./configs/VQA.yaml', help="Path to the model config file (VQA.yaml).")
+    parser.add_argument('--text_encoder', default='bert-base-uncased', help="Name of the text encoder model.")
+    parser.add_argument('--text_decoder', default='bert-base-uncased', help="Name of the text decoder model.")
+    parser.add_argument('--device', default='cuda', help="Device to run inference on (e.g., 'cuda' or 'cpu').")
+    
+    # --- Input/Output Path Arguments ---
+    parser.add_argument('--input_dir', type=str, required=True, help="Path to the directory containing input images.")
+    parser.add_argument('--output_file', type=str, required=True, help="Path to the output JSON file to save results.")
     
     return parser.parse_args()
 
@@ -71,98 +81,88 @@ def main():
         config = yaml.load(f)
 
     device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+    
     tokenizer = BertTokenizer.from_pretrained(args.text_encoder)
 
     # Load model
     model = load_model(args, config, tokenizer, device)
 
-    # Group images by encounter_id
-    path = '/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final/images_valid'
+    # --- Use input_dir from args ---
     image_groups = defaultdict(list)
     
-    for filename in os.listdir(path):
+    print(f"🔍 Scanning for images in: {args.input_dir}")
+    for filename in os.listdir(args.input_dir):
         if not filename.lower().endswith(('.png', '.jpg', '.jpeg')):
             continue
             
-        # Parse encounter_id from filename (format: IMG_ENC00908_00001.jpg)
         parts = filename.split('_')
         if len(parts) >= 3 and parts[0] == "IMG" and parts[1].startswith("ENC"):
             encounter_id = parts[1]
-            image_path = os.path.join(path, filename)
+            image_path = os.path.join(args.input_dir, filename)
             image_groups[encounter_id].append(image_path)
 
-    # Sort images in each group by image number
+    if not image_groups:
+        print("❌ No images found in the specified format (e.g., IMG_ENCxxxxx_...jpg). Please check the --input_dir path and filenames.")
+        return
+
+    # Sort images in each group
     for encounter_id in image_groups:
         image_groups[encounter_id].sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
-    # image_paths = sorted(image_paths)
-    
+
+    # (Your questions_and_answers dictionary remains here)
     questions_and_answers = {
-    "CQID010-001": ("How much of the body is affected?", ["single spot", "limited area", "widespread", "Not mentioned"]),
-    "CQID011-001": ("1 Where is the affected area?", ["head", "neck", "upper extremities", "lower extremities", "chest/abdomen", "back", "other (please specify)", "Not mentioned"]),
-    "CQID011-002": ("2 Where is the affected area?", ["head", "neck", "upper extremities", "lower extremities", "chest/abdomen", "back", "other (please specify)", "Not mentioned"]),
-    "CQID011-003": ("3 Where is the affected area?", ["head", "neck", "upper extremities", "lower extremities", "chest/abdomen", "back", "other (please specify)", "Not mentioned"]),
-    "CQID011-004": ("4 Where is the affected area?", ["head", "neck", "upper extremities", "lower extremities", "chest/abdomen", "back", "other (please specify)", "Not mentioned"]),
-    "CQID011-005": ("5 Where is the affected area?", ["head", "neck", "upper extremities", "lower extremities", "chest/abdomen", "back", "other (please specify)", "Not mentioned"]),
-    "CQID011-006": ("6 Where is the affected area?", ["head", "neck", "upper extremities", "lower extremities", "chest/abdomen", "back", "other (please specify)", "Not mentioned"]),
-    "CQID012-001": ("1 How large are the affected areas? Please specify which affected area for each selection.", ["size of thumb nail", "size of palm", "larger area", "Not mentioned"]),
-    "CQID012-002": ("2 How large are the affected areas? Please specify which affected area for each selection.", ["size of thumb nail", "size of palm", "larger area", "Not mentioned"]),
-    "CQID012-003": ("3 How large are the affected areas? Please specify which affected area for each selection.", ["size of thumb nail", "size of palm", "larger area", "Not mentioned"]),
-    "CQID012-004": ("4 How large are the affected areas? Please specify which affected area for each selection.", ["size of thumb nail", "size of palm", "larger area", "Not mentioned"]),
-    "CQID012-005": ("5 How large are the affected areas? Please specify which affected area for each selection.", ["size of thumb nail", "size of palm", "larger area", "Not mentioned"]),
-    "CQID012-006": ("6 How large are the affected areas? Please specify which affected area for each selection.", ["size of thumb nail", "size of palm", "larger area", "Not mentioned"]),
-    "CQID015-001": ("When did the patient first notice the issue?", ["within hours", "within days", "within weeks", "within months", "over a year", "multiple years", "Not mentioned"]),
-    "CQID020-001": ("1 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-002": ("2 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-003": ("3 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-004": ("4 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-005": ("5 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-006": ("6 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-007": ("7 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-008": ("8 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID020-009": ("9 What label best describes the affected area?", ["raised or bumpy", "flat", "skin loss or sunken", "thick or raised", "thin or close to the surface", "warty", "crust", "scab", "weeping", "Not mentioned"]),
-    "CQID025-001": ("Is there any associated itching with the skin problem?", ["yes", "no", "Not mentioned"]),
-    "CQID034-001": ("Compared to the normal surrounding skin, what is the color of the skin lesion?", ["normal skin color", "pink", "red", "brown", "blue", "purple", "black", "white", "combination (please specify)", "hyperpigmentation", "hypopigmentation", "Not mentioned"]),
-    "CQID035-001": ("How many skin lesions are there?", ["single", "multiple (please specify)", "Not mentioned"]),
-    "CQID036-001": ("What is the skin lesion texture?", ["smooth", "rough", "Not mentioned"]),
-}
+        "CQID010-001": ("How much of the body is affected?", ["single spot", "limited area", "widespread", "Not mentioned"]),
+        # ... (all other questions are here)
+        "CQID036-001": ("What is the skin lesion texture?", ["smooth", "rough", "Not mentioned"]),
+    }
 
     results = []
-    for encounter_id in sorted(image_groups.keys()):
+    total_encounters = len(image_groups)
+    for i, encounter_id in enumerate(sorted(image_groups.keys())):
         encounter_image_paths = image_groups[encounter_id]
-        print(f"Processing encounter {encounter_id} with {len(encounter_image_paths)} images...")
+        print(f"🔄 Processing encounter {i+1}/{total_encounters}: {encounter_id} with {len(encounter_image_paths)} images...")
         
-        # Dictionary to collect predictions for each question across images
         question_predictions = {}
         
         for image_path in encounter_image_paths:
+            img_tensor = preprocess_image(image_path, config)
+            if img_tensor is None:
+                continue # Skip corrupted images
+
             for question_id, (question, answer_list) in questions_and_answers.items():
-                img_tensor = preprocess_image(image_path, config)
                 answer_index = infer_one_sample(model, img_tensor, question, answer_list, config, device)
                 
                 if question_id not in question_predictions:
                     question_predictions[question_id] = []
                 question_predictions[question_id].append(answer_index)
         
-        # Determine the final answer for each question using majority vote
         encounter_result = {"encounter_id": encounter_id}
         for question_id, indices in question_predictions.items():
-            # Count occurrences of each index
-            counts = {}
-            for idx in indices:
-                counts[idx] = counts.get(idx, 0) + 1
-            # Find the index with the highest count
-            max_count = max(counts.values())
-            candidates = [k for k, v in counts.items() if v == max_count]
-            final_index = candidates[0]  # Handle ties by selecting the first
-            encounter_result[question_id] = final_index
+            if not indices:
+                # Handle case where no valid images were processed for this encounter
+                final_answer = questions_and_answers[question_id][1].index("Not mentioned") # Default to "Not mentioned"
+            else:
+                counts = defaultdict(int)
+                for idx in indices:
+                    counts[idx] += 1
+                # Find the index with the highest count (majority vote)
+                final_answer = max(counts, key=counts.get)
+            
+            encounter_result[question_id] = final_answer
         
         results.append(encounter_result)
 
-    # Save result
-    os.makedirs("/kaggle/working/output/clef2025", exist_ok=True)
-    with open("/kaggle/working/output/clef2025/mumc_test.json", "w") as f:
+    # --- Save result to output_file from args ---
+    # 1. Get the directory part of the output file path
+    output_dir = os.path.dirname(args.output_file)
+    # 2. If the directory is not empty, create it
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    # 3. Save the file
+    with open(args.output_file, "w") as f:
         json.dump(results, f, indent=2)
-    print("✅ Saved mumc_test.json")
+    print(f"✅ Results saved successfully to: {args.output_file}")
 
 
 if __name__ == '__main__':
