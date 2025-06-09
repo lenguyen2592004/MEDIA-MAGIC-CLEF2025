@@ -2,6 +2,7 @@ import os
 import json
 import time
 import argparse 
+import sys
 
 # Import necessary libraries for Kaggle Secrets and the new client
 try:
@@ -9,19 +10,15 @@ try:
     KAGGLE_SECRETS_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     KAGGLE_SECRETS_AVAILABLE = False
-    print("⚠️  Warning: Kaggle 'UserSecretsClient' not found. Will use hardcoded API keys if available.")
+    # Không in cảnh báo ở đây nữa, sẽ xử lý trong logic tải key
 
 from google import genai
 from google.genai.types import (
-    GenerateContentConfig,
-    HarmBlockThreshold,
-    HarmCategory,
-    SafetySetting,
     FinishReason
 )
 
 # --- AI Prompt Definition ---
-# This is a large constant, so it's fine to keep it at the global level.
+# Hằng số này lớn, giữ ở phạm vi toàn cục là hợp lý.
 AI_PROMPT = """
 ROLE: AI Medical Concept Enrichment Specialist
 CONTEXT: You are tasked with processing text content, typically image captions or descriptions (query_content_en field) related to medical observations, often within a Visual Question Answering (VQA) context for medicine, especially but not limited to Dermatology. Your goal is to enhance this text by identifying specific medical terms and appending concise, accurate definitions. This prompt is designed for the Qwen2 VL Instruct model.
@@ -76,20 +73,19 @@ Now, process the following input text based on these instructions:
 """
 
 # --- Biến toàn cục cho việc xoay vòng API key ---
-# Sẽ được khởi tạo trong hàm main
 api_keys = []
 current_key_index = 0
 current_key_uses = 0
 
 # --- Hàm xử lý API ---
-def enrich_text_with_gemini(text_to_enrich, args):
+def enrich_text_with_gemini(text_to_enrich, model_name, requests_per_key):
     """
-    Enriches text by calling the Gemini API and handles API key rotation.
+    Làm giàu văn bản bằng cách gọi Gemini API và xử lý việc xoay vòng key.
     """
     global current_key_index, current_key_uses, api_keys
 
     if not api_keys:
-        print("❌ Error: API keys list is empty. Cannot make a request.")
+        print("❌ Lỗi: Danh sách API key trống. Không thể thực hiện yêu cầu.", file=sys.stderr)
         return text_to_enrich
 
     # Chuẩn bị client với key hiện tại
@@ -98,168 +94,199 @@ def enrich_text_with_gemini(text_to_enrich, args):
 
     try:
         response = client.models.generate_content(
-            model=args.model,
+            model=model_name,
             contents=[full_input]
         )
 
         if not response.candidates:
-            print(f"API response empty or blocked for text: '{text_to_enrich[:80]}...'")
+            print(f"API response trống hoặc bị chặn cho văn bản: '{text_to_enrich[:80]}...'")
             if response.prompt_feedback and response.prompt_feedback.block_reason:
-                print(f"Blocked reason: {response.prompt_feedback.block_reason}")
+                print(f"Lý do bị chặn: {response.prompt_feedback.block_reason}")
             return text_to_enrich
 
         candidate = response.candidates[0]
         if candidate.finish_reason != FinishReason.STOP:
-            print(f"API finished with non-STOP reason: {candidate.finish_reason.name} for text: '{text_to_enrich[:80]}...'")
+            print(f"API kết thúc với lý do không phải STOP: {candidate.finish_reason.name} cho văn bản: '{text_to_enrich[:80]}...'")
             return text_to_enrich
 
         if not hasattr(candidate, 'content') or not hasattr(candidate.content, 'parts') or not candidate.content.parts:
-            print(f"API finished with STOP but no content parts found for text: '{text_to_enrich[:80]}...'")
+            print(f"API kết thúc với STOP nhưng không có nội dung cho văn bản: '{text_to_enrich[:80]}...'")
             return text_to_enrich
 
         enriched_text = candidate.content.parts[0].text.strip()
-        print(f"SUCCESSFUL! {enriched_text}\n")
+        print(f"THÀNH CÔNG! {enriched_text}\n")
 
         # Tăng counter sau mỗi lần gọi thành công
         current_key_uses += 1
         
         # Kiểm tra nếu đã dùng đủ số lần cho phép
-        if current_key_uses >= args.requests_per_key:
+        if current_key_uses >= requests_per_key:
             current_key_index = (current_key_index + 1) % len(api_keys)
             current_key_uses = 0
-            print(f"🔄 Switching to API key index {current_key_index}")
+            print(f"🔄 Đang chuyển sang API key ở vị trí {current_key_index}")
 
         return enriched_text
     except Exception as e:
-        print(f"API call failed for text: '{text_to_enrich[:80]}...' Error: {e}")
+        print(f"Lỗi gọi API cho văn bản: '{text_to_enrich[:80]}...' Lỗi: {e}", file=sys.stderr)
+        # Chuyển sang key tiếp theo nếu có lỗi (ví dụ: key hết hạn, sai định dạng)
+        current_key_index = (current_key_index + 1) % len(api_keys)
+        current_key_uses = 0
+        print(f"🔄 Thử chuyển sang API key tiếp theo ở vị trí {current_key_index} do có lỗi.")
         time.sleep(5)
         return text_to_enrich
+
+def _load_api_keys(args):
+    """
+    Tải API keys theo thứ tự ưu tiên:
+    1. Đối số từ dòng lệnh (--api-keys)
+    2. Biến môi trường
+    3. Kaggle Secrets
+    Trả về một danh sách các key.
+    """
+    # 1. Ưu tiên cao nhất: Lấy từ đối số dòng lệnh
+    if args.api_keys:
+        print(f"✅ Đã tải {len(args.api_keys)} API key(s) từ đối số dòng lệnh.")
+        return args.api_keys
+
+    # 2. Ưu tiên thứ hai: Lấy từ biến môi trường
+    env_keys_str = os.getenv(args.env_var)
+    if env_keys_str:
+        keys = [key.strip() for key in env_keys_str.split(',') if key.strip()]
+        if keys:
+            print(f"✅ Đã tải {len(keys)} API key(s) từ biến môi trường '{args.env_var}'.")
+            return keys
+
+    # 3. Ưu tiên thứ ba: Lấy từ Kaggle Secrets (nếu có)
+    if KAGGLE_SECRETS_AVAILABLE:
+        print(f"Đang thử tải key từ Kaggle secret '{args.secret_name}'...")
+        try:
+            user_secrets = UserSecretsClient()
+            secret_string = user_secrets.get_secret(args.secret_name)
+            keys = json.loads(secret_string)
+            if isinstance(keys, list) and keys:
+                print(f"✅ Đã tải {len(keys)} API key(s) từ Kaggle secret.")
+                return keys
+            else:
+                print(f"⚠️ Secret '{args.secret_name}' không chứa danh sách key hợp lệ.")
+        except Exception as e:
+            print(f"⚠️ Không thể tải key từ Kaggle secret '{args.secret_name}'. Lỗi: {e}")
+
+    # Nếu không có key nào được tìm thấy
+    return []
 
 # --- Main Processing Logic ---
 def main(args):
     """
-    Main function to load, process, and save the data.
+    Hàm chính để tải, xử lý và lưu dữ liệu.
     """
-    global api_keys # Khai báo để có thể thay đổi biến toàn cục
-
-    # --- API Key Setup ---
-    # Ưu tiên lấy từ Kaggle Secrets, nếu không có thì dùng key hardcode
-    if KAGGLE_SECRETS_AVAILABLE:
-        try:
-            user_secrets = UserSecretsClient()
-            # Giả sử secret chứa một chuỗi JSON của các key
-            # Ví dụ: ["key1", "key2", "key3"]
-            secret_string = user_secrets.get_secret(args.secret_name)
-            api_keys = json.loads(secret_string)
-            print(f"✅ Successfully loaded {len(api_keys)} API keys from Kaggle secret '{args.secret_name}'.")
-        except Exception as e:
-            print(f"⚠️ Could not load keys from Kaggle secret '{args.secret_name}'. Error: {e}")
-            print("Trying hardcoded fallback keys...")
+    global api_keys
     
+    # --- Thiết lập API Key ---
+    api_keys = _load_api_keys(args)
     if not api_keys:
-        # Danh sách key dự phòng nếu Kaggle Secrets không hoạt động hoặc không có sẵn
-        api_keys = [
-            'YOUR_API_KEY_1_HERE', # <-- THAY KEY CỦA BẠN VÀO ĐÂY
-            'YOUR_API_KEY_2_HERE', # <-- THAY KEY CỦA BẠN VÀO ĐÂY
-        ]
-        # Xóa các key mẫu không hợp lệ
-        api_keys = [key for key in api_keys if 'YOUR_API_KEY' not in key]
-        
-        if api_keys:
-            print(f"✅ Using {len(api_keys)} hardcoded fallback API keys.")
-        else:
-            print("❌ Critical Error: No API keys found in Kaggle Secrets or hardcoded list. Exiting.")
-            return
+        print("❌ Lỗi nghiêm trọng: Không có API key nào được cung cấp.", file=sys.stderr)
+        print("Vui lòng cung cấp key qua đối số --api-keys, biến môi trường, hoặc Kaggle Secrets.", file=sys.stderr)
+        sys.exit(1) # Thoát chương trình với mã lỗi
 
-    # --- Data Processing ---
-    print(f"Loading data from {args.input}")
+    # --- Xử lý dữ liệu ---
+    print(f"Đang tải dữ liệu từ {args.input}")
     try:
         with open(args.input, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        print(f"Loaded {len(data)} encounters.")
+        print(f"Đã tải {len(data)} bản ghi.")
     except FileNotFoundError:
-        print(f"Error: Input file not found at {args.input}")
+        print(f"Lỗi: Không tìm thấy file đầu vào tại {args.input}", file=sys.stderr)
         return
     except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from {args.input}. Please ensure it is valid JSON.")
+        print(f"Lỗi: Không thể giải mã JSON từ {args.input}. Hãy đảm bảo file có định dạng JSON hợp lệ.", file=sys.stderr)
         return
     except Exception as e:
-        print(f"An error occurred while loading the file: {e}")
+        print(f"Đã xảy ra lỗi khi tải file: {e}", file=sys.stderr)
         return
 
     processed_count = 0
-    for entry in data:
+    total_entries = len(data)
+    for i, entry in enumerate(data):
         if "query_content_en" in entry and isinstance(entry["query_content_en"], str) and entry["query_content_en"]:
             original_text = entry["query_content_en"]
             encounter_id = entry.get("encounter_id", "N/A")
-            print(f"Processing {encounter_id} ({processed_count + 1}/{len(data)})")
+            print(f"--- Đang xử lý {encounter_id} ({i + 1}/{total_entries}) ---")
+            print(f"Văn bản gốc: {original_text}")
 
-            enriched_text = enrich_text_with_gemini(original_text, args)
+            enriched_text = enrich_text_with_gemini(original_text, args.model, args.requests_per_key)
             entry["query_content_en"] = enriched_text
             processed_count += 1
 
-            if processed_count % args.checkpoint_freq == 0:
-                print(f"Saving checkpoint to {args.output}...")
+            if processed_count > 0 and processed_count % args.checkpoint_freq == 0:
+                print(f"💾 Đang lưu checkpoint vào {args.output}...")
                 try:
                     with open(args.output, 'w', encoding='utf-8') as outfile:
                         json.dump(data, outfile, indent=4, ensure_ascii=False)
-                    print("Checkpoint saved.")
+                    print("Lưu checkpoint thành công.")
                 except Exception as e:
-                    print(f"Error saving checkpoint: {e}")
+                    print(f"Lỗi khi lưu checkpoint: {e}", file=sys.stderr)
         else:
-            print(f"Warning: 'query_content_en' not found, empty or not a string in entry {entry.get('encounter_id', 'N/A')}. Skipping.")
+            print(f"⚠️ Cảnh báo: 'query_content_en' không tồn tại, rỗng hoặc không phải là chuỗi trong bản ghi {entry.get('encounter_id', 'N/A')}. Bỏ qua.")
 
-    print(f"Finished processing {processed_count} entries.")
-    print(f"Saving final enriched data to {args.output}")
+    print(f"\n--- HOÀN TẤT ---")
+    print(f"Đã xử lý {processed_count} bản ghi.")
+    print(f"Đang lưu kết quả cuối cùng vào {args.output}")
     try:
         with open(args.output, 'w', encoding='utf-8') as outfile:
             json.dump(data, outfile, indent=4, ensure_ascii=False)
-        print("Processing complete. Enriched data saved.")
+        print("✅ Xử lý hoàn tất. Dữ liệu đã được lưu.")
     except Exception as e:
-        print(f"Error saving the final output file: {e}")
+        print(f"Lỗi khi lưu file đầu ra cuối cùng: {e}", file=sys.stderr)
 
 # --- Argument Parser Setup ---
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Enrich medical text in a JSON file using the Gemini API.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter # Hiển thị giá trị mặc định trong help
+        description="Làm giàu văn bản y tế trong file JSON bằng Gemini API.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
     parser.add_argument(
         "-i", "--input",
-        default="/kaggle/input/imageclef-2025-vqa/valid_ht_v2.json",
-        help="Path to the input JSON file."
+        required=True,
+        help="Đường dẫn đến file JSON đầu vào."
     )
     parser.add_argument(
         "-o", "--output",
-        default="val_enriched_output.json",
-        help="Path to the output JSON file."
+        default="enriched_output.json",
+        help="Đường dẫn đến file JSON đầu ra."
+    )
+    parser.add_argument(
+        "--api-keys",
+        nargs='+', # Chấp nhận một hoặc nhiều giá trị
+        help="Một hoặc nhiều API key của Gemini. Đây là tùy chọn có ưu tiên cao nhất."
     )
     parser.add_argument(
         "-m", "--model",
-        default="gemini-2.5-flash-preview-04-17", # Sử dụng "latest" để linh hoạt hơn
-        help="The ID of the Gemini model to use for enrichment."
+        default="gemini-1.5-flash-latest",
+        help="ID của model Gemini sẽ sử dụng."
     )
     parser.add_argument(
         "--secret-name",
-        default="gemini-api-keys", # Tên secret chứa danh sách key
-        help="The name of the Kaggle secret containing a JSON list of API keys."
+        default="gemini-api-keys",
+        help="Tên của Kaggle secret chứa danh sách API key (định dạng JSON)."
+    )
+    parser.add_argument(
+        "--env-var",
+        default="GEMINI_API_KEYS",
+        help="Tên biến môi trường chứa các API key (phân tách bằng dấu phẩy)."
     )
     parser.add_argument(
         "--requests-per-key",
         type=int,
-        default=15,
-        help="Number of successful API calls before switching to the next key."
+        default=50, # Flash model thường có giới hạn cao hơn
+        help="Số lượng yêu cầu API thành công trước khi chuyển sang key tiếp theo."
     )
     parser.add_argument(
         "--checkpoint-freq",
         type=int,
-        default=10,
-        help="How often (number of entries) to save a checkpoint of the output file."
+        default=20,
+        help="Tần suất (số bản ghi) lưu checkpoint của file đầu ra."
     )
     
-    # Phân tích các đối số từ dòng lệnh
     args = parser.parse_args()
-    
-    # Gọi hàm chính với các đối số đã được phân tích
     main(args)
