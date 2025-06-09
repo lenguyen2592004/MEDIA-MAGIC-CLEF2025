@@ -4,6 +4,7 @@ Create vqa dataset
 python dataset/gemini_vqa_dataset.py --question-file "train_enrich_full.json" --definitions-file "closedquestions_definitions_imageclef2025.json"  --output-file "train_gemini_vqa_dataset.json"
 ```
 Repeat this process for the valid and test datasets, ensuring the output JSON files are named val_gemini_vqa_dataset.json and test_gemini_vqa_dataset.json respectively.
+
 2. Create MUMC pretrain dataset
 ```bash
 python dataset/mumc_pretrain_data.py --image_dir enhance_train --input_json train_enrich_full.json --output_json pretrain_data_train.json
