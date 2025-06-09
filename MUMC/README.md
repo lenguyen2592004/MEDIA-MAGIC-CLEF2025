@@ -14,9 +14,9 @@ python MUMC/pretrain.py  \
 ```
 2. Finetuning stage.
 2.1. Training.
-   ```bash
-   python train_vqa.py --dataset_use "clef2025" --output_dir "MUMC/output/finetune" --checkpoint MUMC/output/pretrain/latest_model.pth
-   ```
+```bash
+python train_vqa.py --dataset_use "clef2025" --output_dir "MUMC/output/finetune" --checkpoint MUMC/output/pretrain/latest_model.pth
+```
 2.2. Inference.
 ```bash
 python MUMC/infer_one_sample.py \
