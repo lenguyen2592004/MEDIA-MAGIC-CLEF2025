@@ -8,39 +8,39 @@ python>=3.13.4
 ```
 ## Usage
 
-Để sử dụng các thành phần của dự án, vui lòng tham khảo hướng dẫn chi tiết trong file `README.md` tại mỗi thư mục tương ứng.
+To use the components of this project, please follow the instructions in the `README.md` file located within each corresponding directory.
 
-### 1. Preprocessing (Tiền xử lý)
+### 1. Preprocessing
 
-- **1.1. Image Enhancement (Cải thiện ảnh):**
-  - Xem hướng dẫn trong thư mục [`preprocessing/ga`](./preprocessing/ga).
+- **1.1. Image Enhancement:**
+  - Follow the guide in the [`preprocessing/ga`](./preprocessing/ga) directory.
 
-- **1.2. Additional Caption Generation (Tạo chú thích bổ sung):**
-  - Xem hướng dẫn trong thư mục [`preprocessing/blip`](./preprocessing/blip).
+- **1.2. Additional Caption Generation:**
+  - Follow the guide in the [`preprocessing/blip`](./preprocessing/blip) directory.
 
-- **1.3. Concatenate Caption (Kết hợp chú thích):**
-  - Xem hướng dẫn trong thư mục [`preprocessing/concat_caption`](./preprocessing/concat_caption).
+- **1.3. Concatenate Captions:**
+  - Follow the guide in the [`preprocessing/concat_caption`](./preprocessing/concat_caption) directory.
 
-- **1.4. Linking External Knowledge (Liên kết tri thức ngoài):**
-  - Xem hướng dẫn trong thư mục [`preprocessing/linking_external_knowledge`](./preprocessing/linking_external_knowledge).
+- **1.4. Linking External Knowledge:**
+  - Follow the guide in the [`preprocessing/linking_external_knowledge`](./preprocessing/linking_external_knowledge) directory.
 
-### 2. Creating Dataset (Tạo bộ dữ liệu)
+### 2. Creating the Dataset
 
-- Xem hướng dẫn trong thư mục [`dataset`](./dataset).
+- Follow the guide in the [`dataset`](./dataset) directory.
 
-### 3. Creating Shuffling Dataset (Tạo bộ dữ liệu đã xáo trộn)
+### 3. Creating the Shuffled Dataset
 
-- Xem hướng dẫn trong thư mục [`shuffle`](./shuffle).
+- Follow the guide in the [`shuffle`](./shuffle) directory.
 
-### 4. Baseline Models (Các mô hình cơ sở)
+### 4. Baseline Models
 
 - **4.1. MUMC:**
-  - Xem hướng dẫn trong thư mục [`MUMC`](./MUMC).
+  - Follow the guide in the [`MUMC`](./MUMC) directory.
 
 - **4.2. Gemini 2.5:**
-  - Xem hướng dẫn trong thư mục [`Gemini-2.5`](./Gemini-2.5). 
-  *(Lưu ý: Tôi đã sửa đường dẫn này từ `MUMC` thành `Gemini-2.5` để khớp với tiêu đề. Bạn hãy chỉnh lại cho đúng với tên thư mục thực tế của bạn).*
+  - Follow the guide in the [`gemini`](./gemini) directory. 
+  *(Note: Your original text pointed to the `MUMC` directory for this. I have assumed a more likely path. Please adjust `Gemini-2.5` to match your actual folder name.)*
 
-### 5. Ensemble (Tổ hợp mô hình)
+### 5. Ensemble
 
-- Xem hướng dẫn trong thư mục [`ensemble`](./ensemble).
+- Follow the guide in the [`ensemble`](./ensemble) directory.
