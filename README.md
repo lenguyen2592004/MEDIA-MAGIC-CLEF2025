@@ -39,7 +39,6 @@ To use the components of this project, please follow the instructions in the `RE
 
 - **4.2. Gemini 2.5:**
   - Follow the guide in the [`gemini`](./gemini) directory. 
-  *(Note: Your original text pointed to the `MUMC` directory for this. I have assumed a more likely path. Please adjust `Gemini-2.5` to match your actual folder name.)*
 
 ### 5. Ensemble
 
