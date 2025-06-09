@@ -22,7 +22,10 @@ python train_vqa.py --dataset_use "clef2025" --output_dir "MUMC/output/finetune"
 ```
 2.2. Inference.
 ```bash
-python MUMC/infer_one_sample.py \
-  --checkpoint "MUMC/output/finetune/best_model.pth" \
-  --device "cuda"
+python MUMC/inference_clef.py \
+    --checkpoint MUMC/output/finetune/best_model.pth \
+    --input_dir enhance_test \
+    --output_file mumc_output \
+    --config_path MUMC/configs/VQA.yaml \
+    --device cuda
 ```
