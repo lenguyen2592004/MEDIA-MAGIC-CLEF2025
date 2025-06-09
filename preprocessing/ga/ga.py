@@ -113,133 +113,53 @@ class OptimizedImageEnhancementGA:
             return self.mutate_chromosome(base_chromosome, mutation_rate=0.2, mutation_amount=0.15)
         
     def calculate_optimized_fitness(self, original, enhanced):
-        """Optimized fitness calculation with fewer but more effective metrics"""
+        """
+        Hàm tính fitness ĐÃ TỐI GIẢN: Chỉ sử dụng SSIM.
+        Dictionary trả về giờ chỉ chứa 'fitness' và 'ssim'.
+        """
         try:
-            # Safely convert both images
+            # Giữ lại việc chuyển đổi an toàn và caching
             original = self.safe_image_conversion(original)
             enhanced = self.safe_image_conversion(enhanced)
             
-            # Create hash for caching
-            enhanced_hash = hash(enhanced.tobytes()) # Ensure enhanced is contiguous for tobytes
+            # Tạo hash để caching
+            enhanced_hash = hash(enhanced.tobytes())
             if enhanced_hash in self.fitness_cache:
                 return self.fitness_cache[enhanced_hash]
             
-            # 1. Structural similarity (most important metric)
+            # 1. Tính toán Structural Similarity (SSIM) - đây là chỉ số duy nhất
             try:
-                # ssim expects channel_axis if multichannel
+                # ssim yêu cầu channel_axis nếu ảnh đa kênh
                 ssim_value = ssim(original, enhanced, data_range=1.0, channel_axis=2, win_size=3, multichannel=True) 
                 if np.isnan(ssim_value) or np.isinf(ssim_value):
-                    ssim_value = 0.5
+                    ssim_value = 0.0 # Điểm thấp nếu tính toán thất bại
             except Exception as ssim_e:
                 # print(f"SSIM calculation error: {ssim_e}")
-                ssim_value = 0.5 # Fallback if ssim fails
+                ssim_value = 0.0 # Giá trị dự phòng nếu ssim thất bại
             
-            # 2. Simplified contrast measure using standard deviation
-            try:
-                gray_orig = cv2.cvtColor((original * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-                gray_enhanced = cv2.cvtColor((enhanced * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-                
-                contrast_orig = np.std(gray_orig)
-                contrast_enhanced = np.std(gray_enhanced)
-                contrast_improvement = min(contrast_enhanced / (contrast_orig + 1e-8), 2.0) / 2.0
-            except:
-                contrast_improvement = 0.5
+            # Điểm fitness giờ đây chính là giá trị SSIM
+            fitness = ssim_value
             
-            # 3. Edge preservation using simplified gradient
-            try:
-                grad_orig = np.abs(cv2.Laplacian(gray_orig, cv2.CV_32F))
-                grad_enhanced = np.abs(cv2.Laplacian(gray_enhanced, cv2.CV_32F))
-                
-                # Flatten only if not already flat
-                flat_grad_orig = grad_orig.flatten() if grad_orig.ndim > 1 else grad_orig
-                flat_grad_enhanced = grad_enhanced.flatten() if grad_enhanced.ndim > 1 else grad_enhanced
-
-                if len(flat_grad_orig) > 1 and len(flat_grad_enhanced) > 1: # Need at least 2 points for corrcoef
-                    corr_coef = np.corrcoef(flat_grad_orig, flat_grad_enhanced)
-                    if corr_coef.shape == (2, 2):
-                        edge_correlation = corr_coef[0, 1]
-                    else: # Handle cases where corrcoef returns scalar or different shape
-                        edge_correlation = 0.5
-                else:
-                    edge_correlation = 0.5 # Not enough data for correlation
-                
-                if np.isnan(edge_correlation) or np.isinf(edge_correlation):
-                    edge_correlation = 0.5
-                    
-                edge_preservation = max(0, edge_correlation)
-            except:
-                edge_preservation = 0.5
-            
-            # 4. Color naturalness - penalize extreme saturation
-            try:
-                lab_enhanced = rgb2lab(enhanced)
-                color_std = np.std(lab_enhanced[:,:,1:])  # a,b channels
-                color_naturalness = max(0, 1.0 - (color_std - 20) / 50)  # Optimal around 20
-                if np.isnan(color_naturalness) or np.isinf(color_naturalness):
-                    color_naturalness = 0.7
-            except:
-                color_naturalness = 0.7
-            
-            # 5. Noise assessment - difference in smooth areas
-            try:
-                smooth_mask = grad_orig < np.percentile(grad_orig, 30)
-                if np.sum(smooth_mask) > 100:  # Enough smooth pixels
-                    noise_score = 1.0 - np.mean(np.abs(original - enhanced)[smooth_mask]) * 5
-                    noise_score = max(0, min(1, noise_score))
-                else:
-                    noise_score = 0.7
-                
-                if np.isnan(noise_score) or np.isinf(noise_score):
-                    noise_score = 0.7
-            except:
-                noise_score = 0.7
-            
-            # Optimized weighted combination
-            weights = {
-                'ssim': 0.4,      # Increased weight for most reliable metric
-                'contrast': 0.25,
-                'edge': 0.2,
-                'color': 0.1,
-                'noise': 0.05
-            }
-            
-            fitness = (
-                weights['ssim'] * ssim_value +
-                weights['contrast'] * contrast_improvement +
-                weights['edge'] * edge_preservation +
-                weights['color'] * color_naturalness +
-                weights['noise'] * noise_score
-            )
-            
-            # Ensure fitness is a valid number
+            # Đảm bảo fitness là một số hợp lệ
             if np.isnan(fitness) or np.isinf(fitness):
-                fitness = 0.3
+                fitness = 0.0 # Điểm rất thấp
             
+            # Từ điển metrics bây giờ chỉ chứa các thông tin cần thiết.
             metrics = {
-                'fitness': fitness,
-                'ssim': ssim_value,
-                'contrast': contrast_improvement,
-                'edge': edge_preservation,
-                'color': color_naturalness,
-                'noise': noise_score
+                'fitness': fitness,      # Điểm chính cho GA
+                'ssim': ssim_value       # Nguồn gốc của fitness
             }
             
-            # Cache result
+            # Lưu kết quả vào cache
             self.fitness_cache[enhanced_hash] = metrics
             return metrics
             
         except Exception as e:
             # print(f"Error in fitness calculation: {e}")
-            # import traceback
-            # traceback.print_exc()
-            # Return default metrics if calculation fails
+            # Trả về metrics mặc định nếu có lỗi nghiêm trọng
             default_metrics = {
-                'fitness': 0.3,
-                'ssim': 0.5,
-                'contrast': 0.5,
-                'edge': 0.5,
-                'color': 0.5,
-                'noise': 0.5
+                'fitness': 0.0, # Trả về điểm fitness thấp khi có lỗi
+                'ssim': 0.0
             }
             return default_metrics
     
