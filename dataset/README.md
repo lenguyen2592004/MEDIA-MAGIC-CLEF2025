@@ -11,7 +11,7 @@ python dataset/mumc_pretrain_data.py --image_dir enhance_train --input_json trai
 Repeat this process for the valid and test datasets, ensuring the output JSON files are named pretrain_data_val.json and pretrain_data_test.json respectively.
 3. Create MUMC vqa dataset
 ```bash
-python prepare_data.py \
+python dataset/mumc_vqa_dataset.py \
     --train_encounters_json train_enrich_full.json \
     --train_answers_json train_cvqa.json \
     --valid_encounters_json val_enrich_full.json \
@@ -21,5 +21,5 @@ python prepare_data.py \
     --train_image_dir enhance_train \
     --valid_image_dir enhance_valid \
     --test_image_dir enhance_test \
-    --output_dir ./final_data_for_training
+    --output_dir mumc_vqa_dataset
 ```
