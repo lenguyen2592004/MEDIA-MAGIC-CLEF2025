@@ -3,14 +3,23 @@ This repository contains the official implementation for our paper "Hoangwithhis
 DermoSegDiff and DermKEM for Comprehensive Dermatology AI" in task 2: Visual Question Answering for Dermatology VQA.
 # Structure
 Please ensure download full dataset and unzip. The structure should be:
+
 project-root/
+
 ├── 📁 MUMC/
+
 ├── 📁 dataset/
+
 ├── 📁 ensemble/
+
 ├── 📁 gemini/
+
 ├── 📁 preprocessing/
+
 ├── 📁 shuffle/
+
 ├── 📄 evaluate.py
+
 └── 📄 README.md
 
 # Install
