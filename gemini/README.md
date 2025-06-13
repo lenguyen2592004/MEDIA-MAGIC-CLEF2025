@@ -1,3 +1,7 @@
+Installing requirement libraries.
+```bash
+pip install -r requirements.txt
+```
 Using Gemini to generate answer. We will generate three inferences for three version datasets.
 ```bash
 python gemini_infer.py \
