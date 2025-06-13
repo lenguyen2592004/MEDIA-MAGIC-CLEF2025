@@ -34,7 +34,7 @@ To use the components of this project, please follow the instructions in the `RE
 ### 1. Preprocessing
 
 - **1.1. Image Enhancement:**
-  - Follow the guide in the [`preprocessing/ga`](./preprocessing/ga) directory.
+  - Follow the guide in the [`ga`](../ga) directory.
 
 - **1.2. Additional Caption Generation:**
   - Follow the guide in the [`preprocessing/blip`](./preprocessing/blip) directory.
