@@ -9,3 +9,4 @@ Tasks
 - Segmentation: Based on DermoSegDiff (MICCAI 2023 PRIME Workshop), using Denoising Diffusion Probabilistic Models for skin lesion segmentation. See [SEGMENTATION/README](./SEGMENTATION/README.md) for details.
 
 - VQA: Visual Question Answering by DermKEM system for skin lesion images. See [VQA/README](./VQA/README.md) for details.
+- For both tasks, we use the same genetic algorithm, see [ga](./ga) for details.
