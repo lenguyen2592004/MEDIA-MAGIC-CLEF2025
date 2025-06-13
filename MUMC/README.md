@@ -1,9 +1,10 @@
 ## Requirements
 Run the following command to install the required packages:
 ```bash
-pip install -r MUMC/requirements.txt
+pip install -r requirements.txt
 ```
 ## Usage
+Please make sure following README_paper to install all pretrain checkpoints.
 Please make sure Pretrain.yaml and VQA.yaml have correct directories.
 
 1.Pretraining stage.
