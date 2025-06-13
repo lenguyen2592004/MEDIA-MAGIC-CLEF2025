@@ -1,3 +1,7 @@
+Installing requirement libraries.
+```bash
+pip install -r blip/requirements.txt
+```
 Generating additional caption for images via BLIP caption model
 1. Finetuning on SkinCAP dataset
 ```bash
