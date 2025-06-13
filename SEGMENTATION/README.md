@@ -69,11 +69,11 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
   ```!python src/training.py --config configs/new_dataset/dermosegdiff/dsd_01.yaml```
   
   To continue training from a checkpoint, modify the following fields in `configs/new_dataset/dermosegdiff/dsd_01.yaml`:
-    - continue_training: Set to true to resume training.
-    - auto_continue: Set to true to automatically load the latest checkpoint.
-    - save_checkpoint_dir: Directory to save new checkpoints.
-    - load_dir: Directory containing the checkpoint to load.
-    - save_dir: Directory to save model outputs.
+- continue_training: Set to true to resume training.
+- auto_continue: Set to true to automatically load the latest checkpoint.
+- save_checkpoint_dir: Directory to save new checkpoints.
+- load_dir: Directory containing the checkpoint to load.
+- save_dir: Directory to save model outputs.
   You can also adjust hyperparameters (e.g., batch_size, learning_rate, timesteps, etc.) in the same YAML file.
   
   ### Testing
@@ -96,10 +96,10 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
   
   ### Configuration
   The configuration file (dsd_01.yaml) contains all necessary parameters for training and testing. Key fields include:
-    - Dataset paths
-    - Model architecture settings (dim_x_mults, dim_g_mults, etc.)
-    - Training hyperparameters (batch_size, learning_rate, timesteps, etc.)
-    - Checkpoint loading/saving options
+- Dataset paths
+- Model architecture settings (dim_x_mults, dim_g_mults, etc.)
+- Training hyperparameters (batch_size, learning_rate, timesteps, etc.)
+- Checkpoint loading/saving options
 
 Refer to the YAML file for detailed descriptions of each parameter.
   ### Evaluation
