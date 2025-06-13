@@ -23,7 +23,7 @@ project-root/
 └── 📄 README.md
 
 # Install
-# # Python environment
+## Python environment
 ```bash
 python>=3.13.4
 ```
