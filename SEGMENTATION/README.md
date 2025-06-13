@@ -77,6 +77,7 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
   You can also adjust hyperparameters (e.g., batch_size, learning_rate, timesteps, etc.) in the same YAML file.
   
   ### Testing
+  
   To evaluate the model on the test set, use the following command, specifying the config file and the path to the best model checkpoint:
   
 ```
