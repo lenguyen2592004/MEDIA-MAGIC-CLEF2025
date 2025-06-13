@@ -1,3 +1,7 @@
+Installing requirement libraries.
+```bash
+pip install -r requirements.txt
+```
 Using linking external knowledge to enrich medical caption
 ```bash
 python linking.py \
