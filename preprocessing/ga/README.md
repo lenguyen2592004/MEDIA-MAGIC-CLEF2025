@@ -1,6 +1,6 @@
 1. Install requirement libraries.
 ```bash
-pip install -r ga/requirements.txt
+pip install -r requirements.txt
 ```
 2.Create enhanced images by genetic algorithm
 ```bash
