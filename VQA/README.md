@@ -19,9 +19,13 @@ project-root/
 ├── 📁 shuffle/
 
 ├── 📁 images_final/
+
     ├── 📁 images_train/
+    
     ├── 📁 images_valid/
+    
     ├── 📁 images_test/
+    
 
 
 ├── 📄 evaluate.py
