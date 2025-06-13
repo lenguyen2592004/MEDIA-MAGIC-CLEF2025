@@ -69,11 +69,11 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
   ```!python src/training.py --config configs/new_dataset/dermosegdiff/dsd_01.yaml```
   
   To continue training from a checkpoint, modify the following fields in `configs/new_dataset/dermosegdiff/dsd_01.yaml`:
-- continue_training: Set to true to resume training.
-- auto_continue: Set to true to automatically load the latest checkpoint.
-- save_checkpoint_dir: Directory to save new checkpoints.
-- load_dir: Directory containing the checkpoint to load.
-- save_dir: Directory to save model outputs.
+- **continue_training**: Set to true to resume training.
+- **auto_continue**: Set to true to automatically load the latest checkpoint.
+- **save_checkpoint_dir**: Directory to save new checkpoints.
+- **load_dir**: Directory containing the checkpoint to load.
+- **save_dir**: Directory to save model outputs.
 
   You can also adjust hyperparameters (e.g., batch_size, learning_rate, timesteps, etc.) in the same YAML file.
   
@@ -83,17 +83,17 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
   
 ```
   !python src/testing.py \
-  -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
-  --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth" 
+    -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
+    --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth" 
 ```
   
   ### Testing on a Single Sample
 ``` 
     !python src/testing_one_sample.py \
-    -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
-    --image_path "/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final/images_valid/IMG_ENC00853_00001.jpg" \
-    --ensemble_number 5 \
-    --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth"
+      -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
+      --image_path "/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final/images_valid/IMG_ENC00853_00001.jpg" \
+      --ensemble_number 5 \
+      --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth"
 ```
   
   ### Configuration
