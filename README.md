@@ -4,6 +4,6 @@ This project includes two tasks: **Skin Lesion Segmentation** and **Closed Visua
 
 Tasks
 
-- Segmentation: Based on DermoSegDiff (MICCAI 2023 PRIME Workshop), using Denoising Diffusion Probabilistic Models for skin lesion segmentation. See [SEGMENTATION/README.md][./SEGMENTATION/README.md] for details.
+- Segmentation: Based on DermoSegDiff (MICCAI 2023 PRIME Workshop), using Denoising Diffusion Probabilistic Models for skin lesion segmentation. See [SEGMENTATION/README.md](./SEGMENTATION/README.md) for details.
 
 - VQA: Visual Question Answering by DermKEM system for skin lesion images. See [VQA/README.md](./VQA/README.md) for details.
