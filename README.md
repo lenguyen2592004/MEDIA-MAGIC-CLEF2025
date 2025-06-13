@@ -1,6 +1,8 @@
 # Hoangwithhisfriends at MEDIQA-MAGIC 2025: DermoSegDiff and DermKEM for Comprehensive Dermatology AI
 
-This project includes two tasks: **Skin Lesion Segmentation** and **Closed Visual Question Answering (cVQA)** for dermatological images. The segmentation task is a modified version of **DermoSegDiff**, adapted for a new dataset. The VQA task develop **DermKEM** system that enables answering questions about skin lesion images. Each task is implemented in a separate directory with its own detailed README.
+This project includes two tasks: **Skin Lesion Segmentation** and **Closed Visual Question Answering (cVQA)** for dermatological images. 
+
+The segmentation task is a modified version of **DermoSegDiff**, adapted for a new dataset. The VQA task develop **DermKEM** system that enables answering questions about skin lesion images. Each task is implemented in a separate directory with its own detailed README.
 
 Tasks
 
