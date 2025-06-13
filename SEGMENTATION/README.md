@@ -74,10 +74,11 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
 - save_checkpoint_dir: Directory to save new checkpoints.
 - load_dir: Directory containing the checkpoint to load.
 - save_dir: Directory to save model outputs.
+
   You can also adjust hyperparameters (e.g., batch_size, learning_rate, timesteps, etc.) in the same YAML file.
   
   ### Testing
-  
+
   To evaluate the model on the test set, use the following command, specifying the config file and the path to the best model checkpoint:
   
 ```
