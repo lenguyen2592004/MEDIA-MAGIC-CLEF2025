@@ -1,9 +1,15 @@
 Installing requirement libraries.
+
 ```bash
 pip install -r requirements.txt
 ```
+
+Please download SkinCAP dataset [`Link`](https://huggingface.co/datasets/joshuachou/SkinCAP) and put it in [`./dermatology-dataset`](./dermatology-dataset) directory.
+
 Generating additional caption for images via BLIP caption model
+
 1. Finetuning on SkinCAP dataset
+
 ```bash
 python finetune_blip.py \
     --json_file "dermatology-dataset/skincap_v240623.json" \
@@ -13,7 +19,9 @@ python finetune_blip.py \
     --batch_size 8 \
     --learning_rate 5e-5
 ```
+
 2. Infernce on DermaVQA-DAS dataset
+
 ```bash
 python inference_blip.py \
     --input-json train.json \
@@ -22,4 +30,5 @@ python inference_blip.py \
     --model-name "./skincap_blip_finetuned" \
     --device "cpu"
 ```
+
 Repeat this process for the valid and test datasets, ensuring the output JSON files are named val_blip.json and test_blip.json respectively.
