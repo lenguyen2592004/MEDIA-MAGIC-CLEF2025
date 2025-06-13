@@ -79,18 +79,20 @@ For the new dataset, you can use the provided fine-tuned checkpoint (e.g., [n-ds
   ### Testing
   To evaluate the model on the test set, use the following command, specifying the config file and the path to the best model checkpoint:
   
-  ```!python src/testing.py \
+  ```
+  !python src/testing.py \
   -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
   --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth" 
   ```
   
   ### Testing on a Single Sample
-   ``` !python src/testing_one_sample.py \
-  -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
-  --image_path "/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final/images_valid/IMG_ENC00853_00001.jpg" \
-  --ensemble_number 5 \
-  --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth"
-  ```
+   ``` 
+    !python src/testing_one_sample.py \
+    -c configs/new_dataset/dermosegdiff/dsd_01.yaml \
+    --image_path "/kaggle/input/imageclefmed-mediqa-magic-2025/images_final/images_final/images_valid/IMG_ENC00853_00001.jpg" \
+    --ensemble_number 5 \
+    --best_model_path "/kaggle/input/finetune-dermosegdiff-part-9/checkpoints/n-dsd_h01_s-128_b-8_t-250_sc-linear_best.pth"
+    ```
   
   ### Configuration
   The configuration file (dsd_01.yaml) contains all necessary parameters for training and testing. Key fields include:
