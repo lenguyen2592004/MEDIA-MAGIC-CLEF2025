@@ -1,7 +1,10 @@
 # DermKEM (Dermatology Knowledge-Enhanced Ensemble Model) system for Dermatology VQA
+
 This repository contains the official implementation for our paper "Hoangwithhisfriends at MEDIQA-MAGIC 2025:
 DermoSegDiff and DermKEM for Comprehensive Dermatology AI" in task 2: Visual Question Answering for Dermatology VQA.
+
 # Structure
+
 Please ensure download full dataset and unzip. The structure should be:
 
 project-root/
@@ -14,6 +17,8 @@ project-root/
 
 ├── 📁 gemini/
 
+├── 📁 qwen/
+
 ├── 📁 preprocessing/
 
 ├── 📁 shuffle/
@@ -21,22 +26,23 @@ project-root/
 ├── 📁 images_final/
 
     ├── 📁 images_train/
-    
-    ├── 📁 images_valid/
-    
-    ├── 📁 images_test/
-    
 
+    ├── 📁 images_valid/
+
+    ├── 📁 images_test/
 
 ├── 📄 evaluate.py
 
 └── 📄 README.md
 
 # Install
+
 ## Python environment
+
 ```bash
 python>=3.13.4
 ```
+
 ## Usage
 
 To use the components of this project, please follow the instructions in the `README.md` file located within each corresponding directory.
@@ -44,12 +50,15 @@ To use the components of this project, please follow the instructions in the `RE
 ### 1. Preprocessing
 
 - **1.1. Image Enhancement:**
+
   - Follow the guide in the [`ga`](../ga) directory.
 
 - **1.2. Additional Caption Generation:**
+
   - Follow the guide in the [`preprocessing/blip`](./preprocessing/blip) directory.
 
 - **1.3. Concatenate Captions:**
+
   - Follow the guide in the [`preprocessing/concat_caption`](./preprocessing/concat_caption) directory.
 
 - **1.4. Linking External Knowledge:**
@@ -66,10 +75,15 @@ To use the components of this project, please follow the instructions in the `RE
 ### 4. Baseline Models
 
 - **4.1. MUMC:**
+
   - Follow the guide in the [`MUMC`](./MUMC) directory.
 
 - **4.2. Gemini 2.5:**
-  - Follow the guide in the [`gemini`](./gemini) directory. 
+
+  - Follow the guide in the [`gemini`](./gemini) directory.
+
+- **4.3. Qwen 2.5-VL:**
+  - Follow the guide in the [`qwen`](./qwen) directory.
 
 ### 5. Ensemble
 
