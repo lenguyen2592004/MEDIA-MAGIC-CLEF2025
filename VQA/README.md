@@ -2,7 +2,8 @@
 
 This repository contains the official implementation for our paper "Hoangwithhisfriends at MEDIQA-MAGIC 2025:
 DermoSegDiff and DermKEM for Comprehensive Dermatology AI" in task 2: Visual Question Answering for Dermatology VQA.
-
+# Dataset
+DermaVQA-DAS dataset can be found at [https://ai4media-bench.aimultimedialab.ro/competitions/62/](https://ai4media-bench.aimultimedialab.ro/competitions/62/).
 # Structure
 
 Please ensure download full dataset and unzip. The structure should be:
