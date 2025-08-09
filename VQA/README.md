@@ -1,6 +1,6 @@
 # DermKEM (Dermatology Knowledge-Enhanced Ensemble Model) system for Dermatology VQA
 
-This repository contains the official implementation for our paper "Hoangwithhisfriends at MEDIQA-MAGIC 2025:
+This repository contains the official implementation for our paper "H3N1 at MEDIQA-MAGIC 2025:
 DermoSegDiff and DermKEM for Comprehensive Dermatology AI" in task 2: Visual Question Answering for Dermatology VQA.
 # Dataset
 DermaVQA-DAS dataset can be found at [https://ai4media-bench.aimultimedialab.ro/competitions/62/](https://ai4media-bench.aimultimedialab.ro/competitions/62/).
