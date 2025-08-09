@@ -1,4 +1,4 @@
-# Hoangwithhisfriends at MEDIQA-MAGIC 2025: DermoSegDiff and DermKEM for Comprehensive Dermatology AI
+# H3N1 at MEDIQA-MAGIC 2025: DermoSegDiff and DermKEM for Comprehensive Dermatology AI
 
 This project includes two tasks: **Skin Lesion Segmentation** and **Closed Visual Question Answering (cVQA)** for dermatological images. 
 
